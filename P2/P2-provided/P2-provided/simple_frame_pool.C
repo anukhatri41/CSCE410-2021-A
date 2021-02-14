@@ -8,7 +8,7 @@ SimpleFramePool::SimpleFramePool(unsigned long _base_frame_no,
                                  unsigned long _info_frame_no)
 {
     // Bitmap must fit in a single frame!
-    assert(_nframes <= FRAME_SIZE * 8);
+    assert(_nframes <= FRAME_SIZE * 8); // don't need for cont_frame_pool
     
     base_frame_no = _base_frame_no;
     nframes = _nframes;
