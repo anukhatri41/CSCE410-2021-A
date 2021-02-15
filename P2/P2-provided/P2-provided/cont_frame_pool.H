@@ -20,7 +20,9 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+const unsigned char FRAME_FREE = 0;
+const unsigned char FRAME_ALLOCATED = 1;
+const unsigned char FRAME_HEAD = 2;
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -42,6 +44,12 @@ class ContFramePool {
     
 private:
     /* -- DEFINE YOUR CONT FRAME POOL DATA STRUCTURE(s) HERE. */
+    unsigned long base_frame_no;
+    unsigned long n_frames;
+    unsigned long info_frame_no;
+    unsigned long n_info_frames;
+
+    void mark_inaccessible(unsigned long _frame_no);
     
 public:
 

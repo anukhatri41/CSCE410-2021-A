@@ -115,7 +115,6 @@
 /* CONSTANTS */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
 
 /*--------------------------------------------------------------------------*/
 /* FORWARDS */
@@ -157,6 +156,7 @@ void ContFramePool::release_frames(unsigned long _first_frame_no)
 
 unsigned long ContFramePool::needed_info_frames(unsigned long _n_frames)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    unsigned long n_bytes = FRAME_SIZE;
+    unsigned long n_info_frames = (_n_frames / FRAME_SIZE) + (_n_frames % FRAME_SIZE > 0 ? 1 : 0);
+    return n_info_frames;
 }
