@@ -170,11 +170,11 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
 
     unsigned long frame_no = base_frame_no;
     bool found = false; // determines if full length of _n_frames found yet
-    unsigned long frame_counter = 0;
+    //unsigned long frame_counter = 0;
 
     // index in bitmap
     unsigned long i = 0;
-    unsigned frame_index = 0;
+    unsigned long frame_index = 0;
     
     // Finding the range
     while(!found){
@@ -193,7 +193,7 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
             frame_no += i;
 
             if((i + _n_frames) < n_frames){
-                // See if there is the full length of _n_frames 
+                // See if there is the full length of _n_frames after the i
                 for(unsigned long j = i; j < (i + _n_frames); j++){
                     // Last frame of _n_frames
                     if(j == (i + _n_frames - 1)){
@@ -223,6 +223,18 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
     }
 
     // Range was found - need to now change those frames to head//allocated
+    for(unsigned long j = frame_index; j < (frame_index + _n_frames); j++){
+        // First frame - make HEAD 
+        if(j == frame_index){
+            bitmap[j] == FRAME_HEAD;
+        } else{
+            // Making rest of frames ALLOCATED 
+            bitmap[j] == FRAME_ALLOCATED;
+        }
+        
+        // Reducing num frames available in pool
+        n_free_frames--;
+    }
 }
 
 void ContFramePool::mark_inaccessible(unsigned long _base_frame_no,

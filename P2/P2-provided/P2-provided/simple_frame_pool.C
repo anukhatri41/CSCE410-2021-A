@@ -56,7 +56,7 @@ unsigned long SimpleFramePool::get_frame()
         i++;
     }
     
-    frame_no += i * 8;
+    frame_no += i * 8; // don't need for cont_frame_pool
     
     unsigned char mask = 0x80;
     while ((mask & bitmap[i]) == 0) {
