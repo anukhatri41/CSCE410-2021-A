@@ -44,6 +44,8 @@ class ContFramePool {
     
 private:
     /* -- DEFINE YOUR CONT FRAME POOL DATA STRUCTURE(s) HERE. */
+    unsigned char* bitmap;
+    unsigned int n_free_frames;
     unsigned long base_frame_no;
     unsigned long n_frames;
     unsigned long info_frame_no;

@@ -131,14 +131,98 @@ ContFramePool::ContFramePool(unsigned long _base_frame_no,
                              unsigned long _info_frame_no,
                              unsigned long _n_info_frames)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    assert(_n_frames <= FRAME_SIZE);
+    
+    base_frame_no = _base_frame_no;
+    n_frames = _n_frames;
+    n_free_frames = _n_frames;
+    info_frame_no = _info_frame_no;
+    n_info_frames = _n_info_frames;
+
+    // If _info_frame_no is zero then we keep management info in the first
+    //frame, else we use the provided frame to keep management info
+    // Kept same as simple_frame_pool
+    if(info_frame_no == 0) {
+        bitmap = (unsigned char *) (base_frame_no * FRAME_SIZE);
+    } else {
+        bitmap = (unsigned char *) (info_frame_no * FRAME_SIZE);
+    }
+
+    // Mark all bits in the bitmap
+    for(int i = 0; i < n_frames; i++){
+        bitmap[i] = FRAME_FREE;
+    }
+
+    // Mark the first frame(s) as being used if it is being used
+    if(_info_frame_no == 0){
+        for(int i = 0; i < _n_info_frames; i++){
+            bitmap[0] = FRAME_ALLOCATED;
+            n_free_frames--;
+        }
+    }
+
+    Console::puts("Frame Pool Initialized\n");
 }
 
 unsigned long ContFramePool::get_frames(unsigned int _n_frames)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    assert(n_free_frames > 0);
+
+    unsigned long frame_no = base_frame_no;
+    bool found = false; // determines if full length of _n_frames found yet
+    unsigned long frame_counter = 0;
+
+    // index in bitmap
+    unsigned long i = 0;
+    unsigned frame_index = 0;
+    
+    // Finding the range
+    while(!found){
+        if(i > n_frames){
+            // Extended beyond the pool range
+            // Return 0 to indicate no feasible range found
+            frame_no = 0;
+            return frame_no;
+        } else {
+            // Traversing until hits a free or end of pool
+            while((bitmap[i] == FRAME_HEAD || FRAME_ALLOCATED) && i < n_frames){
+                i++;
+            } 
+
+            // Found first free frame - update frame_no
+            frame_no += i;
+
+            if((i + _n_frames) < n_frames){
+                // See if there is the full length of _n_frames 
+                for(unsigned long j = i; j < (i + _n_frames); j++){
+                    // Last frame of _n_frames
+                    if(j == (i + _n_frames - 1)){
+                        // If last frame is also free, then full length found
+                        // Will update found (then end outer while loop)
+                        if(bitmap[j] == FRAME_FREE){
+                            frame_index = i;
+                            found = true;
+                            break;
+                        }
+                    } else{
+                        if(bitmap[j] == FRAME_FREE){
+                            continue;
+                        } else{
+                            // Frame was either head or allocated
+                            // Start over what frame_no is (since i will take care of numbers above)
+                            frame_no = base_frame_no;
+                            i += j;
+
+                            // exit for loop
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Range was found - need to now change those frames to head//allocated
 }
 
 void ContFramePool::mark_inaccessible(unsigned long _base_frame_no,
@@ -154,6 +238,7 @@ void ContFramePool::release_frames(unsigned long _first_frame_no)
     assert(false);
 }
 
+// Done
 unsigned long ContFramePool::needed_info_frames(unsigned long _n_frames)
 {
     unsigned long n_bytes = FRAME_SIZE;

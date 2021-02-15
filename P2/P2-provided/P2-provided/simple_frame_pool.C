@@ -24,7 +24,7 @@ SimpleFramePool::SimpleFramePool(unsigned long _base_frame_no,
     }
     
     // Number of frames must be "fill" the bitmap!
-    assert ((nframes % 8 ) == 0);
+    assert ((nframes % 8 ) == 0); // not needed for ContFramePool
     
     
     // Everything ok. Proceed to mark all bits in the bitmap
