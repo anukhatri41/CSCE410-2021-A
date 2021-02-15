@@ -2,6 +2,7 @@
     "files.associations": {
         "cont_frame_pool.C": "cpp",
         "simple_frame_pool.C": "cpp",
-        "kernel.C": "cpp"
+        "kernel.C": "cpp",
+        "utils.C": "cpp"
     }
 }

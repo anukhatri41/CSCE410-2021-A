@@ -123,4 +123,3 @@ void SimpleFramePool::release_frame(unsigned long _frame_no)
     nFreeFrames++;
 #endif
 }
-

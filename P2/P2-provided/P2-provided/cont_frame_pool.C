@@ -108,8 +108,8 @@
 /*--------------------------------------------------------------------------*/
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
-
-/* -- (none) -- */
+// Linked list of all ContFramePool
+PoolNode* ContFramePool::pool_list;
 
 /*--------------------------------------------------------------------------*/
 /* CONSTANTS */
@@ -159,6 +159,14 @@ ContFramePool::ContFramePool(unsigned long _base_frame_no,
             bitmap[0] = FRAME_ALLOCATED;
             n_free_frames--;
         }
+    }
+
+    if(pool_list == NULL){
+        pool_list->pool = this;
+    } else{
+        pool_list->next = this;
+        pool_list->prev = pool_list->pool;
+        
     }
 
     Console::puts("Frame Pool Initialized\n");
@@ -241,14 +249,52 @@ void ContFramePool::mark_inaccessible(unsigned long _base_frame_no,
                                       unsigned long _n_frames)
 {
     // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    // Mark all frames in the range as being used
+    for(unsigned long i = _base_frame_no; i < _base_frame_no; i++){
+        mark_inaccessible(i);
+    }
 }
 
+// Help mark_inaccessible function
+void ContFramePool::mark_inaccessible(unsigned long _frame_no){
+    // Range check
+    assert((_frame_no >= base_frame_no) && (_frame_no < base_frame_no + n_frames));
+
+    unsigned long bitmap_index = _frame_no - base_frame_no;
+    
+    // Making sure not already head/allocated
+    assert(bitmap[bitmap_index] != (FRAME_HEAD || FRAME_ALLOCATED));
+
+    // Update bitmap
+    bitmap[bitmap_index] == FRAME_ALLOCATED;
+    n_free_frames--;
+}
+
+void ContFramePool::release_frames_help(unsigned long _first_frame_no){
+    unsigned long bitmap_index = _first_frame_no - base_frame_no;
+    assert(bitmap[bitmap_index] == FRAME_HEAD);
+    if(bitmap[bitmap_index] == FRAME_FREE){
+        Console::puts("Error: Frame being released is not used\n");
+        assert(false);
+    }
+
+    while(bitmap[bitmap_index] != FRAME_FREE){
+        bitmap[bitmap_index] = FRAME_FREE;
+        n_free_frames++;
+        bitmap_index++;
+    }
+
+}
 void ContFramePool::release_frames(unsigned long _first_frame_no)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    PoolNode* temp = pool_list;
+    while(temp != NULL){
+        if((_first_frame_no >= temp->pool->base_frame_no) && (_first_frame_no < (temp->pool->base_frame_no + temp->pool->n_frames))){
+            temp->pool->release_frames_help(_first_frame_no);
+        }
+    }
 }
+
 
 // Done
 unsigned long ContFramePool::needed_info_frames(unsigned long _n_frames)

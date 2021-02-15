@@ -34,7 +34,13 @@ const unsigned char FRAME_HEAD = 2;
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+struct PoolNode{
+  ContFramePool* pool;
+  ContFramePool* next;
+  ContFramePool* prev;
+};
+
+
 
 /*--------------------------------------------------------------------------*/
 /* C o n t F r a m e   P o o l  */
@@ -51,7 +57,11 @@ private:
     unsigned long info_frame_no;
     unsigned long n_info_frames;
 
+    static PoolNode* pool_list;
+
     void mark_inaccessible(unsigned long _frame_no);
+
+    void release_frames_help(unsigned long _first_frame_no);
     
 public:
 
