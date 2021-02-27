@@ -8,7 +8,7 @@ SimpleFramePool::SimpleFramePool(unsigned long _base_frame_no,
                                  unsigned long _info_frame_no)
 {
     // Bitmap must fit in a single frame!
-    assert(_nframes <= FRAME_SIZE * 8);
+    assert(_nframes <= FRAME_SIZE * 8); // don't need for cont_frame_pool 
     
     base_frame_no = _base_frame_no;
     nframes = _nframes;
@@ -24,12 +24,12 @@ SimpleFramePool::SimpleFramePool(unsigned long _base_frame_no,
     }
     
     // Number of frames must be "fill" the bitmap!
-    assert ((nframes % 8 ) == 0);
+    assert ((nframes % 8 ) == 0); // not needed for ContFramePool
     
     
     // Everything ok. Proceed to mark all bits in the bitmap
     for(int i=0; i*8 < _nframes; i++) {
-        bitmap[i] = 0xFF;
+        bitmap[i] = 0xFF; //mark free
     }
     
     // Mark the first frame as being used if it is being used
@@ -56,7 +56,7 @@ unsigned long SimpleFramePool::get_frame()
         i++;
     }
     
-    frame_no += i * 8;
+    frame_no += i * 8; // don't need for cont_frame_pool
     
     unsigned char mask = 0x80;
     while ((mask & bitmap[i]) == 0) {
@@ -123,4 +123,3 @@ void SimpleFramePool::release_frame(unsigned long _frame_no)
     nFreeFrames++;
 #endif
 }
-
