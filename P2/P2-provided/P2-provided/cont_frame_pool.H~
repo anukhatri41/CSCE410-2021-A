@@ -34,7 +34,6 @@ const unsigned char FRAME_HEAD = 2;
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
 
-class ContFramePool;
 struct PoolNode{
   ContFramePool* pool;
   ContFramePool* next;
