@@ -52,6 +52,7 @@
  
  How can we use the HEAD-OF-SEQUENCE state to implement a contiguous
  allocator? Let's look a the individual functions:
+
  
  Constructor: Initialize all frames to FREE, except for any frames that you 
  need for the management of the frame pool, if any.
@@ -131,14 +132,17 @@ ContFramePool::ContFramePool(unsigned long _base_frame_no,
                              unsigned long _info_frame_no,
                              unsigned long _n_info_frames)
 {
-    assert(_n_frames <= FRAME_SIZE);
+    //assert(_n_frames <= FRAME_SIZE);
     
     base_frame_no = _base_frame_no;
     n_frames = _n_frames;
     n_free_frames = _n_frames;
     info_frame_no = _info_frame_no;
     n_info_frames = _n_info_frames;
-
+    
+    if(n_info_frames == 0){
+	n_info_frames = needed_info_frames(n_frames);
+    }
     // If _info_frame_no is zero then we keep management info in the first
     //frame, else we use the provided frame to keep management info
     // Kept same as simple_frame_pool
@@ -174,8 +178,12 @@ ContFramePool::ContFramePool(unsigned long _base_frame_no,
 
 unsigned long ContFramePool::get_frames(unsigned int _n_frames)
 {
-    assert(n_free_frames > 0);
+    Console::puts("Inside get_frames\n");
 
+    // Make sure there are still free frames available
+    assert(n_free_frames >= _n_frames);
+   
+    // Keeping track of frame number when making head/allocated once range is found
     unsigned long frame_no = base_frame_no;
     bool found = false; // determines if full length of _n_frames found yet
     //unsigned long frame_counter = 0;
@@ -186,30 +194,37 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
     
     // Finding the range
     while(!found){
+	//Console::puts("Inside outer while loop\n");
         if(i > n_frames){
             // Extended beyond the pool range
             // Return 0 to indicate no feasible range found
             frame_no = 0;
+	    Console::puts("No range found\n");
             return frame_no;
         } else {
             // Traversing until hits a free or end of pool
-            while((bitmap[i] == FRAME_HEAD || FRAME_ALLOCATED) && i < n_frames){
+            while((bitmap[i] == (FRAME_HEAD || FRAME_ALLOCATED)) && i < n_frames){
                 i++;
             } 
 
             // Found first free frame - update frame_no
             frame_no += i;
-
+	    Console::puts("frame_no = "); Console::puti(frame_no); Console::puts("\n");
+	    // Catches if the index+range is longer than the total number of frames
             if((i + _n_frames) < n_frames){
+		//Console::puts("Inside if frame statement\n");
                 // See if there is the full length of _n_frames after the i
                 for(unsigned long j = i; j < (i + _n_frames); j++){
+		    //Console::puts("Inside for loop\n");
                     // Last frame of _n_frames
                     if(j == (i + _n_frames - 1)){
+                        Console::puts("On last frame\n");
                         // If last frame is also free, then full length found
                         // Will update found (then end outer while loop)
                         if(bitmap[j] == FRAME_FREE){
                             frame_index = i;
                             found = true;
+			    Console::puts("Range found\n");
                             break;
                         }
                     } else{
@@ -219,8 +234,10 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
                             // Frame was either head or allocated
                             // Start over what frame_no is (since i will take care of numbers above)
                             frame_no = base_frame_no;
-                            i += j;
-
+                            //i += j+1;
+			    i += j;
+			    Console::puti(i); Console::puts("\n");
+			    //Console::puts("Need to start over and find new range - found head//allocated\n");
                             // exit for loop
                             break;
                         }
@@ -229,7 +246,7 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
             }
         }
     }
-
+    //Console::puts("Range found - need to change frames\n");
     // Range was found - need to now change those frames to head//allocated
     for(unsigned long j = frame_index; j < (frame_index + _n_frames); j++){
         // First frame - make HEAD 
@@ -243,12 +260,14 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
         // Reducing num frames available in pool
         n_free_frames--;
     }
+    //Console::puts("Frames changed\n");
+    // Give infinite loop/long loop at the Need to start over since head/allocated found step if adding the below return statement - but need this statement
+    //return frame_no;
 }
 
 void ContFramePool::mark_inaccessible(unsigned long _base_frame_no,
                                       unsigned long _n_frames)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
     // Mark all frames in the range as being used
     for(unsigned long i = _base_frame_no; i < _base_frame_no; i++){
         mark_inaccessible(i);
