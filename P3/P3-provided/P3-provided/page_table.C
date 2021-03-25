@@ -4,6 +4,9 @@
 #include "paging_low.H"
 #include "page_table.H"
 
+#define RIGHT_SHIFT 22
+#define LEFT_SHIFT 10
+
 PageTable *PageTable::current_page_table = NULL;
 unsigned int PageTable::paging_enabled = 0;
 ContFramePool *PageTable::kernel_mem_pool = NULL;
@@ -66,5 +69,21 @@ void PageTable::enable_paging()
 void PageTable::handle_fault(REGS *_r)
 {
    assert(false);
+   /* Have this commented out currently due to having errors with previous work before implementing this function
+   unsigned long directory_address = read_cr2() >> RIGHT_SHIFT;
+   
+   // Page Table Error
+   if(_r % 2 == 0){
+      unsigned long table_address = read_cr2() << LEFT_SHIFT;
+      table_address = table_address >> RIGHT_SHIFT;
+      // Not sure if * PAGE_SIZE is needed below
+      current_page_table->page_table[table_address] = (unsigned long *) (process_mem_pool->get_frames(1) * PAGE_SIZE);
+   } else if(_r % 2 == 1){ // Page Directory Error
+      unsigned long * page_table2 = (unsigned long *) (kernel_mem_pool->get_frames(1) * PAGE_SIZE);
+      // Where frame is put in page table - unsure what some_address would be
+      page_table2[some_address] = (unsigned long *) (process_mem_pool->get_frames(1) * PAGE_SIZE); // also unsure about PAGE_SIZE here
+      current_page_table->page_directory[directory_address] = page_table2;
+   }
+   */
    Console::puts("Handled page fault\n");
 }
