@@ -1,0 +1,25 @@
+¶nstalling handler in IDT position 40
+Installing handler in IDT position 41
+Installing handler in IDT position 42
+Installing handler in IDT position 43
+Installing handler in IDT position 44
+Installing handler in IDT position 45
+Installing handler in IDT position 46
+Installing handler in IDT position 47
+Installed exception handler at ISR <0>
+Installed interrupt handler at IRQ <0>
+Installed interrupt handler at IRQ <1>
+Frame Pool Initialized
+get_frames(2)
+Base Frame Number: 512
+Bitmap: <180>
+Bitmap: <95>
+Bitmap: <16>
+Frame Number: 515
+515
+Frame Pool Initialized
+Hi
+Frame Pool Initialized
+EXCEPTION DISPATCHR: exc_no = <6>
+NO DEFAULT EXCEPTION HANDLER REGISTERED
+

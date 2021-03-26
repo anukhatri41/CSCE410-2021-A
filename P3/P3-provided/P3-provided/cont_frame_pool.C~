@@ -217,7 +217,7 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
 		 //debug_out_E9("Bitmap: "); debug_E9_num(bitmap[i]); 
                 i += 1;
             } 
-	    Console::puts("Bitmap: "); Console::putui(bitmap[i]); Console::puts("\n");
+
             // Found first free frame - update frame_no
             frame_no += i;
 	    Console::puts("Frame Number: "); Console::puti(frame_no); Console::puts("\n");
