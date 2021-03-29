@@ -22,8 +22,8 @@ void PageTable::init_paging(ContFramePool *_kernel_mem_pool,
 
 PageTable::PageTable()
 {
-   page_directory = (unsigned long *)kernel_mem_pool->get_frames(1) * PAGE_SIZE;
-   unsigned long *page_table = (unsigned long *)kernel_mem_pool->get_frames(1) * PAGE_SIZE;
+   page_directory = (unsigned long *)(kernel_mem_pool->get_frames(1) * PAGE_SIZE);
+   unsigned long *page_table = (unsigned long *)(kernel_mem_pool->get_frames(1) * PAGE_SIZE);
 
    unsigned long address = 0; // holds the physical address of where a page is
    unsigned int i;
