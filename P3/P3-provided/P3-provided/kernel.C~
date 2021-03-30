@@ -64,13 +64,12 @@ int main() {
     IRQ::init();
     InterruptHandler::init_dispatcher();
     
-    /*wait()
-    {
+    
         for (unsigned int i = 0; i < (4 MB); ++i)
         {
             0x1;
         }
-    }*/
+    
     /* -- EXAMPLE OF AN EXCEPTION HANDLER: Division-by-Zero  -- */
     
     class DBZ_Handler : public ExceptionHandler {
