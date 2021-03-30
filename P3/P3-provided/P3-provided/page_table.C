@@ -68,33 +68,42 @@ void PageTable::enable_paging()
 void PageTable::handle_fault(REGS *_r)
 {
    unsigned long err = _r->err_code;
-     if(err & 1){
-        Console::puts("Error: Protection Fault\n");
-        return;
-     }
 
-     unsigned long *page_dir = (unsigned long *)read_cr3();
-     unsigned long logical_addr = read_cr2();
-     unsigned long page_dir_index = logical_addr >> RIGHT_SHIFT;
-     unsigned long page_table_index = (logical_addr >> SHIFT_12) & 0x3FF;
-     unsigned long* page_table2;
+   // Return because don't handle protection fault here
+   if(err & 1){
+      Console::puts("Error: Protection Fault\n");
+      return;
+   }
 
-     if(!(page_dir[page_dir_index] & 1)){
-        unsigned long page_table_address = kernel_mem_pool->get_frames(1) * PAGE_SIZE;
-        page_dir[page_dir_index] = page_table_address | 3;
-        page_table2 = (unsigned long *) page_table_address;
+   unsigned long *page_dir = (unsigned long *)read_cr3();
 
-        unsigned long address = 0; // holds the physical address of where a page is
-        unsigned int i;
-        for (i = 0; i < 1024; i++)
-        {
-           page_table2[i] = address | 2;
-           address = address + 4096; // 4096 = 4kb
-        }
-     } else{
-        page_table2 = (unsigned long *)(page_dir[page_dir_index] &  0xFFFFF000);
-     }
+   unsigned long logical_addr = read_cr2();
 
-     page_table2[page_table_index] = process_mem_pool->get_frames(1) * PAGE_SIZE | 3;
+   // Bit shifted to get correct values 
+   unsigned long page_dir_index = logical_addr >> RIGHT_SHIFT;
+   unsigned long page_table_index = (logical_addr >> SHIFT_12) & 0x3FF;
+
+   unsigned long* page_table2;
+
+   if(!(page_dir[page_dir_index] & 1)){
+      // Need to get frame for new page table
+      unsigned long page_table_address = kernel_mem_pool->get_frames(1) * PAGE_SIZE;
+      page_dir[page_dir_index] = page_table_address | 3;
+      page_table2 = (unsigned long *) page_table_address;
+
+      // Same as constructor for setting up page table 
+      unsigned long address = 0; // holds the physical address of where a page is
+      unsigned int i;
+      for (i = 0; i < 1024; i++)
+      {
+         page_table2[i] = address | 2;
+         address = address + 4096; // 4096 = 4kb
+      }
+   } else{
+      page_table2 = (unsigned long *)(page_dir[page_dir_index] &  0xFFFFF000);
+   }
+
+   page_table2[page_table_index] = process_mem_pool->get_frames(1) * PAGE_SIZE | 3;
+   
    Console::puts("handled page fault\n");
 }

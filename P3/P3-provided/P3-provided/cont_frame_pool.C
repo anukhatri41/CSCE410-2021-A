@@ -158,6 +158,12 @@ ContFramePool::ContFramePool(unsigned long _base_frame_no,
 	n_info_frames = needed_info_frames(n_frames);
 	
     }
+	
+    if(info_frame_no == 0) {
+        bitmap = (unsigned char *) (base_frame_no * FRAME_SIZE);
+    } else {
+        bitmap = (unsigned char *) (info_frame_no * FRAME_SIZE);
+    }
 
     // Mark all bits in the bitmap
     for(int i = 0; i < n_frames; i++){
@@ -165,12 +171,13 @@ ContFramePool::ContFramePool(unsigned long _base_frame_no,
     }
 
     // Mark the frame(s) as being used if it is being used
-    bitmap[info_frame_no] = FRAME_HEAD; 
-    n_free_frames--; 
-    for(int i = info_frame_no + 1; i < info_frame_no + n_info_frames; i++){
-            bitmap[i] = FRAME_ALLOCATED;
-	    Console::puts("Bitmap: "); Console::putui(bitmap[i]); Console::puts("\n");
-            n_free_frames--;
+    if(info_frame_no == 0) {
+	    bitmap[info_frame_no] = FRAME_HEAD; 
+	    n_free_frames--; 
+	    for(int i = info_frame_no + 1; i < info_frame_no + n_info_frames; i++){
+		    bitmap[i] = FRAME_ALLOCATED;
+		    n_free_frames--;
+	    }
     }
 
     if(pool_list == NULL){
@@ -186,16 +193,11 @@ ContFramePool::ContFramePool(unsigned long _base_frame_no,
 
 unsigned long ContFramePool::get_frames(unsigned int _n_frames)
 {
-    Console::puts("get_frames(");
-  Console::puti(_n_frames);
-  Console::puts(")\n");
-
     // Make sure there are still free frames available
     assert(n_free_frames >= _n_frames);
    
     // Keeping track of frame number when making head/allocated once range is found
     unsigned long frame_no = base_frame_no;
-    Console::puts("Base Frame Number: "); Console::puti(base_frame_no); Console::puts("\n");
     bool found = false; // determines if full length of _n_frames found yet
 
     // index in bitmap
@@ -212,16 +214,11 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
         } else {
             // Traversing until hits a free or end of pool
             while(bitmap[i] != FRAME_FREE && i < n_frames){
-		 Console::puts("Bitmap: "); Console::putui(bitmap[i]); Console::puts("\n");
-		 Console::puts("i: "); Console::putui(i); Console::puts("\n");
-		 //debug_out_E9("Bitmap: "); debug_E9_num(bitmap[i]); 
                 i += 1;
             } 
-	    Console::puts("Bitmap: "); Console::putui(bitmap[i]); Console::puts("\n");
             // Found first free frame - update frame_no
             frame_no += i;
-	    Console::puts("Frame Number: "); Console::puti(frame_no); Console::puts("\n");
-            //debug_out_E9("Frame Number: "); debug_E9_num(frame_no); 
+
 	    // Catches if the index+range is longer than the total number of frames
             if((i + _n_frames) < n_frames){
                 // See if there is the full length of _n_frames after the i
@@ -267,7 +264,6 @@ unsigned long ContFramePool::get_frames(unsigned int _n_frames)
     }
     // Give infinite loop/long loop at the Need to start over since head/allocated found step if adding the below return statement - but need this statement
 
-    Console::puti(frame_no); Console::puts("\n");
     return frame_no;
 }
 
