@@ -29,7 +29,7 @@ void PageTable::init_paging(ContFramePool *_kernel_mem_pool,
 PageTable::PageTable()
 {
     page_directory = (unsigned long *)(kernel_mem_pool->get_frames(1) * PAGE_SIZE);
-    unsigned long *page_table = (unsigned long *)(process_mem_pool->get_frames(1) * PAGE_SIZE);
+    unsigned long *page_table = (unsigned long *)(kernel_mem_pool->get_frames(1) * PAGE_SIZE);
 
     unsigned long address = 0; // holds the physical address of where a page is
     unsigned int i;
@@ -119,7 +119,15 @@ void PageTable::handle_fault(REGS *_r)
         unsigned int i;
         for (i = 0; i < 1024; i++)
         {
+            //page_table2[i] = address | 2;
+            //address = address + 4096; // 4096 = 4kb
             unsigned long address;
+            /*address = logical_addr;
+            address = address >> RIGHT_SHIFT;
+            address = address << LEFT_SHIFT;
+            address = (address | i);
+            address = address << SHIFT_2;
+            address = address | 0xFFC00000;*/
             unsigned long p1_section = 0xFFC00000;
             unsigned long pd_section = page_dir_index << SHIFT_12;
             unsigned long i_section = i << SHIFT_2;
@@ -127,18 +135,21 @@ void PageTable::handle_fault(REGS *_r)
             trick_address = (unsigned long*)address;
             *trick_address = 2;
         }
-        //*trick_address = (process_mem_pool->get_frames(1) * PAGE_SIZE) | 3;
+        *trick_address = (process_mem_pool->get_frames(1) * PAGE_SIZE) | 3;
     }
     else
     {   
         unsigned long address2;
+        /*address2 = address2 << SHIFT_12;
+        address2 = address2 >> SHIFT_2;
+        address2 = address2 | 0xFFC00000;*/
         unsigned long p1_section = 0xFFC00000;
         unsigned long pd_section = page_dir_index << SHIFT_12;
         unsigned long pt_section = page_table_index << SHIFT_2;
         address2 = p1_section + pd_section + pt_section;
         trick_address = (unsigned long *) address2;
 
-        page_table2 = (unsigned long *)(page_dir[page_dir_index] & 0xFFFFF000);
+        page_table2 = (unsigned long *)(page_dir[page_dir_index] & 0xFFFFF000); // Maybe don' need
         *trick_address = (process_mem_pool->get_frames(1) * PAGE_SIZE) | 3;
     }
 
