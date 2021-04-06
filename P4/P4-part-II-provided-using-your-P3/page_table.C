@@ -29,7 +29,7 @@ void PageTable::init_paging(ContFramePool *_kernel_mem_pool,
 PageTable::PageTable()
 {
     page_directory = (unsigned long *)(kernel_mem_pool->get_frames(1) * PAGE_SIZE);
-    unsigned long *page_table = (unsigned long *)(kernel_mem_pool->get_frames(1) * PAGE_SIZE);
+    unsigned long *page_table = (unsigned long *)(process_mem_pool->get_frames(1) * PAGE_SIZE);
 
     unsigned long address = 0; // holds the physical address of where a page is
     unsigned int i;
@@ -127,7 +127,7 @@ void PageTable::handle_fault(REGS *_r)
             trick_address = (unsigned long*)address;
             *trick_address = 2;
         }
-        *trick_address = (process_mem_pool->get_frames(1) * PAGE_SIZE) | 3;
+        //*trick_address = (process_mem_pool->get_frames(1) * PAGE_SIZE) | 3;
     }
     else
     {   
