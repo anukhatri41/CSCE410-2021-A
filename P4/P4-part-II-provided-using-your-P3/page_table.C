@@ -7,6 +7,7 @@
 #define RIGHT_SHIFT 22
 #define LEFT_SHIFT 10
 #define SHIFT_12 12
+#define SHIFT_2
 
 PageTable *PageTable::current_page_table = NULL;
 unsigned int PageTable::paging_enabled = 0;
@@ -44,10 +45,14 @@ PageTable::PageTable()
     page_directory[0] = (unsigned long)page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
     page_directory[0] = page_directory[0] | 3;
 
+    // All indices except the last
     for (i = 1; i < 1023; i++)
     {
         page_directory[i] = 0 | 2; // attribute set to: supervisor level, read/write, not present(010 in binary)
     }
+
+    // Assigning last index in page_directory back to the page directory
+    page_directory[1023] = (unsigned long) page_directory | 3;
 
     // Updating current page table
     current_page_table = this;
@@ -100,29 +105,47 @@ void PageTable::handle_fault(REGS *_r)
     unsigned long page_table_index = (logical_addr >> SHIFT_12) & 0x3FF;
 
     unsigned long *page_table2;
+    unsigned long* trick_address;
 
     if (!(page_dir[page_dir_index] & 1))
     {
         // Need to get frame for new page table
-        unsigned long page_table_address = kernel_mem_pool->get_frames(1) * PAGE_SIZE;
+        unsigned long page_table_address = process_mem_pool->get_frames(1) * PAGE_SIZE;
         page_dir[page_dir_index] = page_table_address | 3;
         page_table2 = (unsigned long *)page_table_address;
 
         // Same as constructor for setting up page table
-        unsigned long address = 0; // holds the physical address of where a page is
+        //unsigned long address = 0; // holds the physical address of where a page is
         unsigned int i;
         for (i = 0; i < 1024; i++)
         {
-            page_table2[i] = address | 2;
-            address = address + 4096; // 4096 = 4kb
+            //page_table2[i] = address | 2;
+            //address = address + 4096; // 4096 = 4kb
+            trick_address = logical_addr;
+            trick_address = trick_address >> RIGHT_SHIFT;
+            trick_address = trick_address << LEFT_SHIFT;
+            trick_address = trick_address | i;
+            trick_address = trick_address << SHIFT_2;
+            trick_address = trick_address | 0xFFC00000;
+
+            *trick_address = 2;
         }
     }
     else
     {
-        page_table2 = (unsigned long *)(page_dir[page_dir_index] & 0xFFFFF000);
+        trick_address = logical_addr;
+        trick_address = trick_address << SHIFT_12;
+        trick_address = trick_address >> SHIFT_2;
+        trick_address = trick_address | 0xFFC00000;
+
+        *trick_address = 2;
+
+        page_table2 = (unsigned long *)(page_dir[page_dir_index] & 0xFFFFF000); // Maybe don't need
+        *trick_address = process_mem_pool->get_frames(1) * PAGE_SIZE | 3;
     }
 
-    page_table2[page_table_index] = process_mem_pool->get_frames(1) * PAGE_SIZE | 3;
+    
+
     Console::puts("handled page fault\n");
 }
 
