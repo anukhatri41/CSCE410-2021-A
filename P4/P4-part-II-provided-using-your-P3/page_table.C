@@ -57,7 +57,7 @@ PageTable::PageTable()
     // Updating current page table
     current_page_table = this;
 
-    // No pools yet, so keep at index at 0 for later register_pools
+    // No pools yet, so keep at index at 0 for later register_pool's called
     vm_pools_index = 0;
 
     Console::puts("Constructed Page Table object\n");
@@ -168,6 +168,8 @@ bool PageTable::check_address(unsigned long address)
     // which you will implement for real in P4 Part III.
     // For part II, we give you a fake implementation
     // in vm_pool.C for you to use for  now.
+
+    // Check all address in vm_pools to make sure they are all legitimate
     for(int i = 0; i < vm_pools_index; i++){
         if(vm_pools[i]->is_legitimate(address)){
             return true;
@@ -177,7 +179,8 @@ bool PageTable::check_address(unsigned long address)
 }
 
 void PageTable::register_pool(VMPool *_vm_pool)
-{
+{   
+    // Add to array at next available index
     vm_pools[vm_pools_index] = _vm_pool;
 
     // Update index for next register_ppol
@@ -188,8 +191,9 @@ void PageTable::register_pool(VMPool *_vm_pool)
 
 void PageTable::free_page(unsigned long _page_no)
 {
-    // you need to implement this for P4 Part II.
     unsigned long logical_addr = _page_no * PAGE_SIZE;
+
+    // Using bitshifting and such like done in handle_fault
     unsigned long *page_dir = (unsigned long *)read_cr3();
     unsigned long page_dir_index = logical_addr >> RIGHT_SHIFT;
     unsigned long page_table_index = (logical_addr >> SHIFT_12) & 0x3FF;
@@ -197,9 +201,11 @@ void PageTable::free_page(unsigned long _page_no)
     unsigned long* page_table2 = (unsigned long *)(page_dir[page_dir_index] &  0xFFFFF000);
     unsigned long frame_no = page_table2[page_table_index];
 
+    // Freeing page using frame_no found above
     process_mem_pool->release_frames(frame_no);
-
-    load();
     
+    // Flushing the TLB
+    load();
+
     Console::puts("Freed page\n");
 }

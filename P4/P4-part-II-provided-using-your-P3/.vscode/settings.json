@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "page_table.C": "cpp",
-        "cont_frame_pool.C": "cpp"
+        "cont_frame_pool.C": "cpp",
+        "kernel.C": "cpp"
     }
 }

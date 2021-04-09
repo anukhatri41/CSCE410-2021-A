@@ -65,6 +65,7 @@ public:
 
 
     VMPool* vm_pools[VM_POOL_SIZE];
+    
     // Used during register_pools to keep track of where to put in array
     unsigned long vm_pools_index;
     
