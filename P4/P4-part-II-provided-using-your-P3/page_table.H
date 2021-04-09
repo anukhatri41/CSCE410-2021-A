@@ -17,7 +17,7 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+#define VM_POOL_SIZE 10
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -31,7 +31,7 @@
 /*--------------------------------------------------------------------------*/
 /* FORWARDS */
 /*--------------------------------------------------------------------------*/
-
+class VMPool;
 /* -- (none) -- */
 
 /*--------------------------------------------------------------------------*/
@@ -62,6 +62,12 @@ public:
                             ContFramePool * _process_mem_pool,
                             const unsigned long _shared_size);
     /* Set the global parameters for the paging subsystem. */
+
+
+    VMPool* vm_pools[VM_POOL_SIZE];
+    
+    // Used during register_pools to keep track of where to put in array
+    unsigned long vm_pools_index;
     
     PageTable();
     /* Initializes a page table with a given location for the directory and the
