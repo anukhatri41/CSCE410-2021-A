@@ -52,10 +52,14 @@ PageTable::PageTable()
     }
 
     // Assigning last index in page_directory back to the page directory
-    page_directory[1023] = (unsigned long) page_directory | 3;
+    page_directory[1023] = (unsigned long)page_directory | 3;
 
     // Updating current page table
     current_page_table = this;
+
+    // No pools yet, so keep at index at 0 for later register_pools
+    vm_pools_index = 0;
+
     Console::puts("Constructed Page Table object\n");
 }
 
@@ -99,13 +103,24 @@ void PageTable::handle_fault(REGS *_r)
     unsigned long *page_dir = (unsigned long *)read_cr3();
 
     unsigned long logical_addr = read_cr2();
+    if (!current_page_table->check_address(logical_addr))
+    {
+        Console::puts("check_address failed for address: ");
+        Console::putui(logical_addr);
+        Console::puts(" (this in hexa ");
+        char hexastr[9];
+        ulong2hexstr(logical_addr, hexastr);
+        Console::puts(hexastr);
+        Console::puts(")\n");
+        abort();
+    }
 
     // Bit shifted to get correct values
     unsigned long page_dir_index = logical_addr >> RIGHT_SHIFT;
     unsigned long page_table_index = (logical_addr >> SHIFT_12) & 0x3FF;
 
     unsigned long *page_table2;
-    unsigned long* trick_address;
+    unsigned long *trick_address;
 
     if (!(page_dir[page_dir_index] & 1))
     {
@@ -124,27 +139,25 @@ void PageTable::handle_fault(REGS *_r)
             unsigned long pd_section = page_dir_index << SHIFT_12;
             unsigned long i_section = i << SHIFT_2;
             address = p1_section + pd_section + i_section;
-            trick_address = (unsigned long*)address;
+            trick_address = (unsigned long *)address;
             *trick_address = 2;
         }
         //*trick_address = (process_mem_pool->get_frames(1) * PAGE_SIZE) | 3;
     }
     else
-    {   
+    {
         unsigned long address2;
         unsigned long p1_section = 0xFFC00000;
         unsigned long pd_section = page_dir_index << SHIFT_12;
         unsigned long pt_section = page_table_index << SHIFT_2;
         address2 = p1_section + pd_section + pt_section;
-        trick_address = (unsigned long *) address2;
+        trick_address = (unsigned long *)address2;
 
         page_table2 = (unsigned long *)(page_dir[page_dir_index] & 0xFFFFF000);
         *trick_address = (process_mem_pool->get_frames(1) * PAGE_SIZE) | 3;
     }
 
-    
-
-    Console::puts("handled page fault\n");
+    Console::puts("Handled page fault\n");
 }
 
 bool PageTable::check_address(unsigned long address)
@@ -155,21 +168,38 @@ bool PageTable::check_address(unsigned long address)
     // which you will implement for real in P4 Part III.
     // For part II, we give you a fake implementation
     // in vm_pool.C for you to use for  now.
-    assert(false);
+    for(int i = 0; i < vm_pools_index; i++){
+        if(vm_pools[i]->is_legitimate(address)){
+            return true;
+        }
+    }
     return false; // you need to implement this
 }
 
 void PageTable::register_pool(VMPool *_vm_pool)
 {
-    // you need to implement this for P4 Part II.
-    assert(false);
-    Console::puts("registered VM pool\n");
+    vm_pools[vm_pools_index] = _vm_pool;
+
+    // Update index for next register_ppol
+    vm_pools_index++;
+
+    Console::puts("Registered VM pool\n");
 }
 
 void PageTable::free_page(unsigned long _page_no)
 {
     // you need to implement this for P4 Part II.
-    assert(false);
-    Console::puts("freed page\n");
-}
+    unsigned long logical_addr = _page_no * PAGE_SIZE;
+    unsigned long *page_dir = (unsigned long *)read_cr3();
+    unsigned long page_dir_index = logical_addr >> RIGHT_SHIFT;
+    unsigned long page_table_index = (logical_addr >> SHIFT_12) & 0x3FF;
 
+    unsigned long* page_table2 = (unsigned long *)(page_dir[page_dir_index] &  0xFFFFF000);
+    unsigned long frame_no = page_table2[page_table_index];
+
+    process_mem_pool->release_frames(frame_no);
+
+    load();
+    
+    Console::puts("Freed page\n");
+}
