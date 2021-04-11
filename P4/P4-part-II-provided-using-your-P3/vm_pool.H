@@ -18,19 +18,24 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
-
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
 /*--------------------------------------------------------------------------*/
 
 #include "utils.H"
 #include "cont_frame_pool.H"
+#include "page_table.H"
 
 /*--------------------------------------------------------------------------*/
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
 
+// Used to keep address and size values together for the given region in the 
+// virtual memory pool
+struct mem_region{
+   unsigned long address;
+   unsigned long size;
+};
 /* Forward declaration of class PageTable */
 /* We need this to break a circular include sequence. */
 class PageTable;
@@ -44,6 +49,21 @@ private:
    /* -- DEFINE YOUR VIRTUAL MEMORY POOL DATA STRUCTURE(s) HERE. */
 
 public:
+   // Parameters passed in to the constructor
+   unsigned long base_address;
+   unsigned long size;
+   ContFramePool* frame_pool;
+   PageTable* page_table;
+
+   // No regions yet because allocate not called yet
+   unsigned long mem_region_count;
+
+   // Max number of memory regions allowed
+   unsigned long mem_region_limit;
+   
+   // Keep track of all the memory regions for the VM Pool
+   mem_region* mem_regions;
+
    VMPool(unsigned long  _base_address,
           unsigned long  _size,
           ContFramePool *_frame_pool,

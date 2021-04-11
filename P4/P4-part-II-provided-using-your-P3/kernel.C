@@ -1,40 +1,22 @@
 /*
- File: kernel.C
- 
- Author: R. Bettati
- Department of Computer Science
- Texas A&M University
- Date  : 12/09/03
- 
- 
- This file has the main entry point to the operating system.
- 
- */
+    File: kernel.C
+
+    Author: R. Bettati
+            Department of Computer Science
+            Texas A&M University
+    Date  : 2017/06/20
 
 
-/*--------------------------------------------------------------------------*/
-/* INCLUDES */
-/*--------------------------------------------------------------------------*/
+    This file has the main entry point to the operating system.
 
-#include "machine.H"     /* LOW-LEVEL STUFF   */
-#include "console.H"
-#include "gdt.H"
-#include "idt.H"          /* LOW-LEVEL EXCEPTION MGMT. */
-#include "irq.H"
-#include "exceptions.H"
-#include "interrupts.H"
+*/
 
-#include "simple_keyboard.H" /* SIMPLE KB DRIVER */
-#include "simple_timer.H" /* TIMER MANAGEMENT */
-
-#include "page_table.H"
-#include "paging_low.H"
-#include "utils.H"
 
 /*--------------------------------------------------------------------------*/
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
+#define GB * (0x1 << 30)
 #define MB * (0x1 << 20)
 #define KB * (0x1 << 10)
 #define KERNEL_POOL_START_FRAME ((2 MB) / Machine::PAGE_SIZE)
@@ -53,12 +35,27 @@
 /* NACCESS integer access (i.e. 4 bytes in each access) are made starting at address FAULT_ADDR */
 
 /*--------------------------------------------------------------------------*/
-/* MAIN ENTRY INTO THE OS */
+/* INCLUDES */
 /*--------------------------------------------------------------------------*/
 
+#include "machine.H"        /* LOW-LEVEL STUFF */
+#include "console.H"
+#include "gdt.H"
+#include "idt.H"            /* LOW-LEVEL EXCEPTION MGMT. */
+#include "irq.H"
+#include "exceptions.H"
+#include "interrupts.H"
+
+#include "simple_keyboard.H" /* SIMPLE KB DRIVER */
+#include "simple_timer.H"   /* SIMPLE TIMER MANAGEMENT */
+
+#include "page_table.H"
+#include "paging_low.H"
+
+#include "vm_pool.H"
 
 /*--------------------------------------------------------------------------*/
-/* FORWARD REFERENCES FOR P4 TEST CODE */
+/* FORWARD REFERENCES FOR TEST CODE */
 /*--------------------------------------------------------------------------*/
 
 void TestPassed();
@@ -67,21 +64,67 @@ void TestFailed();
 void GeneratePageTableMemoryReferences(unsigned long start_address, int n_references);
 void GenerateVMPoolMemoryReferences(VMPool *pool, int size1, int size2);
 
+/*--------------------------------------------------------------------------*/
+/* MEMORY ALLOCATION */
+/*--------------------------------------------------------------------------*/
+
+VMPool *current_pool;
+
+typedef unsigned int size_t;
+
+//replace the operator "new"
+void * operator new (size_t size) {
+  unsigned long a = current_pool->allocate((unsigned long)size);
+  return (void *)a;
+}
+
+//replace the operator "new[]"
+void * operator new[] (size_t size) {
+  unsigned long a = current_pool->allocate((unsigned long)size);
+  return (void *)a;
+}
+
+//replace the operator "delete"
+void operator delete (void * p) {
+  current_pool->release((unsigned long)p);
+}
+
+//replace the operator "delete[]"
+void operator delete[] (void * p) {
+  current_pool->release((unsigned long)p);
+}
+
+/*--------------------------------------------------------------------------*/
+/* EXCEPTION HANDLERS */
+/*--------------------------------------------------------------------------*/
+
+/* -- EXAMPLE OF THE DIVISION-BY-ZERO HANDLER */
+
+void dbz_handler(REGS * r) {
+  Console::puts("DIVISION BY ZERO\n");
+  for(;;);
+}
+
+
+/*--------------------------------------------------------------------------*/
+/* MAIN ENTRY INTO THE OS */
+/*--------------------------------------------------------------------------*/
+
 int main() {
-    
-    GDT::init();
+
+   GDT::init();
     Console::init();
     IDT::init();
     ExceptionHandler::init_dispatcher();
     IRQ::init();
     InterruptHandler::init_dispatcher();
-    
-    
+
+
     /* -- EXAMPLE OF AN EXCEPTION HANDLER -- */
     
     class DBZ_Handler : public ExceptionHandler {
       /* We derive Division-by-Zero handler from ExceptionHandler 
-         and overoad the method handle_exception. */
+         and overload the method handle_exception. */
     public:
         virtual void handle_exception(REGS * _regs) {
             Console::puts("DIVISION BY ZERO!\n");
@@ -121,79 +164,79 @@ int main() {
     ContFramePool kernel_mem_pool(KERNEL_POOL_START_FRAME,
                                   KERNEL_POOL_SIZE,
                                   0,
-                                  0);
+				  0);
 
-    //kernel_mem_pool.print_bitmap();
+    unsigned long n_info_frames = 
+      ContFramePool::needed_info_frames(PROCESS_POOL_SIZE);
 
-    unsigned long n_info_frames = ContFramePool::needed_info_frames(PROCESS_POOL_SIZE);
-    
-    unsigned long process_mem_pool_info_frame = kernel_mem_pool.get_frames(n_info_frames);
-    
-    Console::puts("pmpif = "); Console::puti(process_mem_pool_info_frame); Console::puts("\n");
+    unsigned long process_mem_pool_info_frame = 
+      kernel_mem_pool.get_frames(n_info_frames);
+
     ContFramePool process_mem_pool(PROCESS_POOL_START_FRAME,
                                    PROCESS_POOL_SIZE,
                                    process_mem_pool_info_frame,
 				   n_info_frames);
-    
+
     /* Take care of the hole in the memory. */
     process_mem_pool.mark_inaccessible(MEM_HOLE_START_FRAME, MEM_HOLE_SIZE);
-    
+
     /* -- INITIALIZE MEMORY (PAGING) -- */
-    
+
     /* ---- INSTALL PAGE FAULT HANDLER -- */
-    
+
     class PageFault_Handler : public ExceptionHandler {
-        /* We derive the page fault handler from ExceptionHandler 
-           and overload the method handle_exception. */
-    public:
-        virtual void handle_exception(REGS * _regs) {
-            PageTable::handle_fault(_regs);
-        }
+      /* We derive the page fault handler from ExceptionHandler 
+	 and overload the method handle_exception. */
+      public:
+      virtual void handle_exception(REGS * _regs) {
+        PageTable::handle_fault(_regs);
+      }
     } pagefault_handler;
-    
-    /* ---- Register the page fault handler for exception no.14 
+
+    /* ---- Register the page fault handler for exception no. 14
             with the exception dispatcher. */
     ExceptionHandler::register_handler(14, &pagefault_handler);
-    
+
     /* ---- INITIALIZE THE PAGE TABLE -- */
-    
+
     PageTable::init_paging(&kernel_mem_pool,
                            &process_mem_pool,
                            4 MB);
-    
-    PageTable pt;
-    
-    pt.load();
 
-    Console::puts("after pt.load\n");
-    
+    PageTable pt1;
+
+    pt1.load();
+
     PageTable::enable_paging();
-    
-    Console::puts("after enable_paging\n");
+
+    /* -- INITIALIZE THE TWO VIRTUAL MEMORY PAGE POOLS -- */
 
     /* -- MOST OF WHAT WE NEED IS SETUP. THE KERNEL CAN START. */
 
+    Console::puts("Hello World!\n");
+
+    /* WE TEST JUST THE VM POOLS */
+
+    /* -- CREATE THE VM POOLS. */
+
+    VMPool code_pool(512 MB, 256 MB, &process_mem_pool, &pt1);
+    VMPool heap_pool(1 GB, 256 MB, &process_mem_pool, &pt1);
     
-    Console::puts("Hello World! P4 part II test will start.\n");
-    Console::puts("It will touch memory starting on address 4 MB.\n");
+    /* -- NOW THE POOLS HAVE BEEN CREATED. */
 
-    /* TESTING THE PAGE TABLE */
+    Console::puts("VM Pools successfully created!\n");
 
-    Console::puts("First test touches just one virtual page\n");
-    GeneratePageTableMemoryReferences(FAULT_ADDR, 128);
+    /* -- GENERATE MEMORY REFERENCES TO THE VM POOLS */
 
-    Console::puts("Now a test with more memory accesses\n");
-    GeneratePageTableMemoryReferences(FAULT_ADDR, NACCESS);
+    Console::puts("I am starting with an extensive test\n");
+    Console::puts("of the VM Pool memory allocator.\n");
+    Console::puts("Please be patient...\n");
+    Console::puts("Testing the memory allocation on code_pool...\n");
+    GenerateVMPoolMemoryReferences(&code_pool, 50, 100);
+    Console::puts("Testing the memory allocation on heap_pool...\n");
+    GenerateVMPoolMemoryReferences(&heap_pool, 50, 100);
 
-    
     TestPassed();
-
-    /* -- STOP HERE */
-    Console::puts("YOU CAN SAFELY TURN OFF THE MACHINE NOW.\n");
-    for(;;);
-
-    /* -- WE DO THE FOLLOWING TO KEEP THE COMPILER HAPPY. */
-    return 1;
 }
 
 void GeneratePageTableMemoryReferences(unsigned long start_address, int n_references) {
@@ -210,6 +253,25 @@ void GeneratePageTableMemoryReferences(unsigned long start_address, int n_refere
       TestFailed();
     }
   }
+}
+
+void GenerateVMPoolMemoryReferences(VMPool *pool, int size1, int size2) {
+   current_pool = pool;
+   for(int i=1; i<size1; i++) {
+      int *arr = new int[size2 * i];
+      if(pool->is_legitimate((unsigned long)arr) == false) {
+         TestFailed();
+      }
+      for(int j=0; j<size2*i; j++) {
+         arr[j] = j;
+      }
+      for(int j=size2*i - 1; j>=0; j--) {
+         if(arr[j] != j) {
+            TestFailed();
+         }
+      }
+      delete arr;
+   }
 }
 
 void TestFailed() {

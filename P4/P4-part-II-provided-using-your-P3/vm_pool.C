@@ -53,7 +53,24 @@ VMPool::VMPool(unsigned long  _base_address,
     Console::puts("Constructed a fake VMPool object that does nothing\n");
 #else // you are now working on P4 part III
     // replace the assertion with your constructor code
-    assert(false);
+    
+    // Taking care of parameters
+    base_address = _base_address;
+    size = _size;
+    frame_pool = _frame_pool;
+    page_table = _page_table;
+
+    // None because allocate isn't called yet
+    mem_region_count = 0;
+
+    mem_region_limit = Machine::PAGE_SIZE / sizeof(mem_region);
+
+    // Put mem_regions in a frame of frame_pool
+    mem_regions = (mem_region*)((frame_pool->get_frames(1)) * Machine::PAGE_SIZE);
+
+    // Adding newly made VM pool to vm_pools array in page table
+    page_table->register_pool(this);
+
     Console::puts("Constructed VMPool object.\n");
 #endif
 }
