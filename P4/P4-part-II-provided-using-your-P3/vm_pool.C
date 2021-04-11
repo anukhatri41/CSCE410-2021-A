@@ -78,7 +78,25 @@ VMPool::VMPool(unsigned long  _base_address,
 unsigned long VMPool::allocate(unsigned long _size) {
     // You need to implement this for P4 part III
     assert(false);
+    } else{
+        unsigned long prev_index = mem_region_count - 1;
+
+        // Need to calculate from previous mem region since not base address
+        unsigned long built_addr = mem_regions[prev_index].address + mem_regions[prev_index].size;
+        logical_addr = built_addr;
+    }
+
+    // Assign the correct address and given sign to the correct mem_region in the array
+    mem_regions[mem_region_count].address = logical_addr;
+    mem_regions[mem_region_count].size = _size;
+
+    // Increment for next allocate (or release)
+    mem_region_count++;
+
+    // Print before returning so it still prints
     Console::puts("Allocated region of memory.\n");
+
+    return logical_addr;
 }
 
 void VMPool::release(unsigned long _start_address) {
@@ -88,15 +106,19 @@ void VMPool::release(unsigned long _start_address) {
 }
 
 bool VMPool::is_legitimate(unsigned long _address) {
-#ifdef P4partII
-    // You are working on P4 part II, so we give you this
-    // fake implementation so that you can test your functionality
-    // in page_table.C that checks addresses
-    Console::puts("Fake checking ... always returning true.\n");
-    return true;
-else
-    // You need to implement this for P4 part III
-    assert(false);
-#endif
+    Console::puts("Checking legitimacy of given address: ");
+    Console::putui(_address);
+    Console::puts("\n");
+
+    for(unsigned long i = 0; i < mem_region_count; i++){
+        unsigned long range_start = mem_regions[i].address;
+        unsigned long range_end = mem_regions[i].address + mem_regions[i].size;
+        // Within given region of memory
+        if((_address >= range_start) && (_address < range_end)){
+            return true;
+        }
+    }
+
+    return false;
 }
 
