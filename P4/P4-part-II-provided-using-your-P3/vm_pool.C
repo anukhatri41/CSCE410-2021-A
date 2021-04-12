@@ -76,7 +76,14 @@ VMPool::VMPool(unsigned long  _base_address,
 }
 
 unsigned long VMPool::allocate(unsigned long _size) {
-    // You need to implement this for P4 part III
+    // Can't exceed limit and can't allocate size of 0
+    if(_size == 0 || mem_region_count >= mem_region_limit){
+        return 0;
+    }
+
+    unsigned logical_addr;
+    if(mem_region_count == 0){
+        logical_addr = base_address;
     assert(false);
     } else{
         unsigned long prev_index = mem_region_count - 1;
