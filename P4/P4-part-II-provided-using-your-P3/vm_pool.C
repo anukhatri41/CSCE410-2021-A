@@ -100,8 +100,28 @@ unsigned long VMPool::allocate(unsigned long _size) {
 }
 
 void VMPool::release(unsigned long _start_address) {
-    // You need to implement this for P4 part III
-    assert(false);
+    unsigned int index;
+    
+    // Find index of regions where _start_address is
+    for(index = 0; index < mem_region_count; index++){
+        if(mem_regions[index].address == _start_address){
+            // Found which region _start_address is in
+            break;
+        }
+    }
+
+    unsigned int j;
+    unsigned long address = _start_address;
+
+    // Free page by page in region
+    for(j = index; j < (mem_regions[index].size / Machine::PAGE_SIZE); j++){
+        page_table->free_page(address);
+        
+        // Increment for next page to be freed
+        address += Machine::PAGE_SIZE;
+    }
+    // Region should be cleared, so decrement number of regions with the data
+    mem_region_count--;
     Console::puts("Released region of memory.\n");
 }
 
@@ -115,10 +135,11 @@ bool VMPool::is_legitimate(unsigned long _address) {
         unsigned long range_end = mem_regions[i].address + mem_regions[i].size;
         // Within given region of memory
         if((_address >= range_start) && (_address < range_end)){
+            Console::puts("Legitimate address. \n");
             return true;
         }
     }
-
+    Console::puts("Illegitimate address. \n");
     return false;
 }
 
