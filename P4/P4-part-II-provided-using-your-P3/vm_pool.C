@@ -48,11 +48,6 @@ VMPool::VMPool(unsigned long  _base_address,
                unsigned long  _size,
                ContFramePool *_frame_pool,
                PageTable     *_page_table) {
-
-#ifdef P4partII // You are working on P4 part II 
-    Console::puts("Constructed a fake VMPool object that does nothing\n");
-#else // you are now working on P4 part III
-    // replace the assertion with your constructor code
     
     // Taking care of parameters
     base_address = _base_address;
@@ -72,7 +67,6 @@ VMPool::VMPool(unsigned long  _base_address,
     page_table->register_pool(this);
 
     Console::puts("Constructed VMPool object.\n");
-#endif
 }
 
 unsigned long VMPool::allocate(unsigned long _size) {
