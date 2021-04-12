@@ -78,7 +78,6 @@ unsigned long VMPool::allocate(unsigned long _size) {
     unsigned logical_addr;
     if(mem_region_count == 0){
         logical_addr = base_address;
-    assert(false);
     } else{
         unsigned long prev_index = mem_region_count - 1;
 
@@ -123,6 +122,12 @@ void VMPool::release(unsigned long _start_address) {
     }
     // Region should be cleared, so decrement number of regions with the data
     mem_region_count--;
+    
+    // Fix up mem_regions array so there are no holes in the middle
+    for(j = index; j < mem_region_count; j++){
+        mem_regions[j] = mem_regions[j + 1];
+    }
+    
     Console::puts("Released region of memory.\n");
 }
 
