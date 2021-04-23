@@ -46,20 +46,26 @@
 /*--------------------------------------------------------------------------*/
 
 Scheduler::Scheduler() {
-  assert(false);
+  readyQueueCount = 0;
   Console::puts("Constructed Scheduler.\n");
 }
 
 void Scheduler::yield() {
-  assert(false);
+  if(readyQueueCount > 0){
+    // There is a thread to dequeue
+    Thread* t = readyQueue.dequeue();
+    Thread::dispatch_to(t);
+    readyQueueCount--;
+  }
 }
 
 void Scheduler::resume(Thread * _thread) {
-  assert(false);
+  readyQueue.enqueue(_thread);
+  readyQueueCount++;
 }
 
 void Scheduler::add(Thread * _thread) {
-  assert(false);
+  this->resume(_thread);
 }
 
 void Scheduler::terminate(Thread * _thread) {
