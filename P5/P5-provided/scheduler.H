@@ -50,6 +50,44 @@
     
  */
 
+class RQueue;
+// Node to keep RQueue clean
+struct QueueNode{
+   Thread* thread;
+   QueueNode* next;
+};
+
+class RQueue{
+   public:
+      QueueNode* qNode;
+
+      // Default Constructor
+      RQueue(){
+         qNode->thread = NULL;
+         qNode->next = NULL;
+      }
+
+      // Constructor
+      RQueue(Thread* t){
+         qNode->thread = t;
+         qNode->next = NULL;
+      }
+
+      void enqueue(Thread* t){
+         if(!(qNode->thread)){
+            // First thread in queue
+            qNode->thread = t;
+         } else{
+            // More than one node in queue, so not reached end yet
+            if(qNode->next){
+               // Recursively call enqueue until reach a next = NULL (aka end of queue)
+               qNode->next->enqueue(t);
+            } else{
+               qNode->next = new RQueue(t);
+            }
+         }
+      }
+};
 /*--------------------------------------------------------------------------*/
 /* SCHEDULER */
 /*--------------------------------------------------------------------------*/
