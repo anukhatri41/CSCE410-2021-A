@@ -52,57 +52,6 @@
     
  */
 
-/*class RQueue{
-   public:
-      Thread* thread;
-      RQueue* next;
-
-      // Default Constructor
-      RQueue(){
-         thread = NULL;
-         next = NULL;
-      }
-
-      // Constructor
-      RQueue(Thread* t){
-         thread = t;
-         next = NULL;
-      }
-
-      void enqueue(Thread* t){
-         if(!(thread)){
-            // First thread in queue
-            thread = t;
-         } else{
-            // More than one node in queue, so not reached end yet
-            if(next){
-               // Recursively call enqueue until reach a next = NULL (aka end of queue)
-               next->enqueue(t);
-            } else{
-               next = new RQueue(t);
-            }
-         }
-      }
-
-      Thread* dequeue(){
-         if(!(thread)){
-            // nothing to dequeue
-            return NULL;
-         } else{
-            Thread* t2 = thread;
-            if(next){
-               // Fix up impending hole
-               thread = next->thread;
-               RQueue* dead = next;
-               next = next->next;
-               delete dead;
-            } else{
-               thread = NULL;
-            }
-            return t2;
-         }
-      }
-};*/
 /*--------------------------------------------------------------------------*/
 /* SCHEDULER */
 /*--------------------------------------------------------------------------*/
@@ -111,6 +60,8 @@ class Scheduler {
 
   /* The scheduler may need private members... */
   RQueue readyQueue;
+
+  // Keep track of length of readyQueue
   unsigned long readyQueueCount;
   
 public:

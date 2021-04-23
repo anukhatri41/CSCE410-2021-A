@@ -1,4 +1,6 @@
-/* Queue Implementation from https://www.geeksforgeeks.org/queue-linked-list-implementation/ */
+/* Queue Implementation from https://www.geeksforgeeks.org/queue-linked-list-implementation/ 
+   Modified to use for threads
+*/
 
 #include "thread.H"
 #include "utils.H"
@@ -36,11 +38,11 @@ struct RQueue{
     // Modified to return thread instead of just deleting it
     Thread* dequeue(){
         if(front == NULL){
-            return;
+            return NULL;
         }
 
         QNode* dead = front;
-        Thread* temp = dead->front;
+        Thread* temp = dead->thread;
         front = front->next;
 
         if(front == NULL){

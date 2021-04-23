@@ -33,7 +33,7 @@
 
 /* -- UNCOMMENT THE FOLLOWING LINE TO MAKE THREADS TERMINATING */
 
-//#define _TERMINATING_FUNCTIONS_
+#define _TERMINATING_FUNCTIONS_
 /* This macro is defined when we want the thread functions to return, and so
    terminate their thread.
    Otherwise, the thread functions don't return, and the threads run forever.
@@ -108,7 +108,7 @@ void slow_down_output() {
     // Uncomment the macros if you want the output to show up slower
 //#define MAX_VALUE 0x9FFFFF // adjust the value for your preference
 
-//#define SLOW
+#define SLOW
 #ifdef SLOW
     for (unsigned int i = 0; i < MAX_VALUE; i++) {
         // do nothing

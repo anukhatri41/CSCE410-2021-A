@@ -55,6 +55,8 @@ void Scheduler::yield() {
     // There is a thread to dequeue
     Thread* t = readyQueue.dequeue();
     Thread::dispatch_to(t);
+
+    // Reduce count because dequeued
     readyQueueCount--;
   }
 }
@@ -69,5 +71,19 @@ void Scheduler::add(Thread * _thread) {
 }
 
 void Scheduler::terminate(Thread * _thread) {
-  assert(false);
+  // Dequeue from front of queue until reached desired thread.
+  for(int i = 1; i <= readyQueueCount; i++){
+    Thread* removed_thread = readyQueue.dequeue();
+
+    int removed_thread_ID = removed_thread->ThreadId();
+    int _thread_ID = _thread->ThreadId();
+
+    if(removed_thread_ID == _thread_ID){
+      // If successfully dequeued correct thread, reduce count 
+      readyQueueCount--;
+    } else{
+      // Add back to the end of queue if it wasn't the thread we were looking for (due to FIFO)
+      readyQueue.enqueue(removed_thread);
+    }
+  }
 }
