@@ -13,7 +13,9 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+#ifndef NULL
+#define NULL 0
+#endif
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -50,55 +52,49 @@
     
  */
 
-class RQueue;
-// Node to keep RQueue clean
-struct QueueNode{
-   Thread* thread;
-   QueueNode* next;
-};
-
 class RQueue{
    public:
-      QueueNode* qNode;
+      Thread* thread;
+      RQueue* next;
 
       // Default Constructor
       RQueue(){
-         qNode->thread = NULL;
-         qNode->next = NULL;
+         thread = NULL;
+         next = NULL;
       }
 
       // Constructor
       RQueue(Thread* t){
-         qNode->thread = t;
-         qNode->next = NULL;
+         thread = t;
+         next = NULL;
       }
 
       void enqueue(Thread* t){
-         if(!(qNode->thread)){
+         if(!(thread)){
             // First thread in queue
-            qNode->thread = t;
+            thread = t;
          } else{
             // More than one node in queue, so not reached end yet
-            if(qNode->next){
+            if(next){
                // Recursively call enqueue until reach a next = NULL (aka end of queue)
-               qNode->next->enqueue(t);
+               next->enqueue(t);
             } else{
-               qNode->next = new RQueue(t);
+               next = new RQueue(t);
             }
          }
       }
 
       Thread* dequeue(){
-         if(!(qNode->thread)){
+         if(!(thread)){
             // nothing to dequeue
             return NULL;
          } else{
-            Thread* t2 = qNode->thread;
-            if(qNode->next){
+            Thread* t2 = thread;
+            if(next){
                // Fix up impending hole
-               qNode->thread = qNode->next->thread;
-               QueueNode* dead = qNode->next;
-               qNode->next = qNode->next->next;
+               thread = next->thread;
+               RQueue* dead = next;
+               next = next->next;
                delete dead;
             } else{
                thread = NULL;
