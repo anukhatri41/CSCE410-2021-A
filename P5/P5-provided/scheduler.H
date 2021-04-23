@@ -87,6 +87,25 @@ class RQueue{
             }
          }
       }
+
+      Thread* dequeue(){
+         if(!(qNode->thread)){
+            // nothing to dequeue
+            return NULL;
+         } else{
+            Thread* t2 = qNode->thread;
+            if(qNode->next){
+               // Fix up impending hole
+               qNode->thread = qNode->next->thread;
+               QueueNode* dead = qNode->next;
+               qNode->next = qNode->next->next;
+               delete dead;
+            } else{
+               thread = NULL;
+            }
+            return t2;
+         }
+      }
 };
 /*--------------------------------------------------------------------------*/
 /* SCHEDULER */
@@ -95,6 +114,8 @@ class RQueue{
 class Scheduler {
 
   /* The scheduler may need private members... */
+  RQueue readyQueue;
+  unsigned long readyQueueCount;
   
 public:
 
