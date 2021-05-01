@@ -13,14 +13,16 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+#ifndef NULL
+#define NULL 0
+#endif
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
 /*--------------------------------------------------------------------------*/
 
 #include "thread.H"
-
+#include "queue.H"
 /*--------------------------------------------------------------------------*/
 /* !!! IMPLEMENTATION HINT !!! */
 /*--------------------------------------------------------------------------*/
@@ -57,6 +59,10 @@
 class Scheduler {
 
   /* The scheduler may need private members... */
+  RQueue readyQueue;
+
+  // Keep track of length of readyQueue
+  unsigned long readyQueueCount;
   
 public:
 
