@@ -19,10 +19,13 @@
 /*--------------------------------------------------------------------------*/
 
 #include "assert.H"
+#include "machine.H"
 #include "utils.H"
 #include "console.H"
 #include "blocking_disk.H"
+#include "scheduler.H"
 
+extern Scheduler* SYSTEM_SCHEDULER;
 /*--------------------------------------------------------------------------*/
 /* CONSTRUCTOR */
 /*--------------------------------------------------------------------------*/
@@ -34,11 +37,29 @@ BlockingDisk::BlockingDisk(DISK_ID _disk_id, unsigned int _size)
 /*--------------------------------------------------------------------------*/
 /* SIMPLE_DISK FUNCTIONS */
 /*--------------------------------------------------------------------------*/
+void BlockingDisk::wait_until_ready(){
+  while (!is_ready()){
+    SYSTEM_SCHEDULER->resume(Thread::CurrentThread());
 
+    SYSTEM_SCHEDULER->yield();
+  }
+}
 void BlockingDisk::read(unsigned long _block_no, unsigned char * _buf) {
-  // -- REPLACE THIS!!!
-  SimpleDisk::read(_block_no, _buf);
+  /* Reads 512 Bytes in the given block of the given disk drive and copies them 
+   to the given buffer. No error check! */
 
+  issue_operation(READ, _block_no);
+
+  wait_until_ready();
+
+  /* read data from port */
+  int i;
+  unsigned short tmpw;
+  for (i = 0; i < 256; i++) {
+    tmpw = Machine::inportw(0x1F0);
+    _buf[i*2]   = (unsigned char)tmpw;
+    _buf[i*2+1] = (unsigned char)(tmpw >> 8);
+  }
 }
 
 
