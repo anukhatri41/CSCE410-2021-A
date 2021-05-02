@@ -22,6 +22,7 @@
 #include "machine.H"
 #include "utils.H"
 #include "console.H"
+#include "simple_disk.H"
 #include "blocking_disk.H"
 #include "scheduler.H"
 
@@ -37,6 +38,23 @@ BlockingDisk::BlockingDisk(DISK_ID _disk_id, unsigned int _size)
 /*--------------------------------------------------------------------------*/
 /* SIMPLE_DISK FUNCTIONS */
 /*--------------------------------------------------------------------------*/
+void BlockingDisk::issue_operation(DISK_OPERATION _op, unsigned long _block_no) {
+
+  Machine::outportb(0x1F1, 0x00); /* send NULL to port 0x1F1         */
+  Machine::outportb(0x1F2, 0x01); /* send sector count to port 0X1F2 */
+  Machine::outportb(0x1F3, (unsigned char)_block_no);
+                         /* send low 8 bits of block number */
+  Machine::outportb(0x1F4, (unsigned char)(_block_no >> 8));
+                         /* send next 8 bits of block number */
+  Machine::outportb(0x1F5, (unsigned char)(_block_no >> 16));
+                         /* send next 8 bits of block number */
+  Machine::outportb(0x1F6, ((unsigned char)(_block_no >> 24)&0x0F) | 0xE0 | (disk_id << 4));
+                         /* send drive indicator, some bits, 
+                            highest 4 bits of block no */
+
+  Machine::outportb(0x1F7, (_op == READ) ? 0x20 : 0x30);
+
+}
 void BlockingDisk::wait_until_ready(){
   while (!is_ready()){
     SYSTEM_SCHEDULER->resume(Thread::CurrentThread());

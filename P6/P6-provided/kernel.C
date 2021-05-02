@@ -100,7 +100,7 @@ Scheduler * SYSTEM_SCHEDULER;
 /*--------------------------------------------------------------------------*/
 
 /* -- A POINTER TO THE SYSTEM DISK */
-SimpleDisk * SYSTEM_DISK;
+BlockingDisk * SYSTEM_DISK;
 
 #define SYSTEM_DISK_SIZE (10 MB)
 
@@ -314,7 +314,7 @@ int main() {
 
     /* -- DISK DEVICE -- */
 
-    SYSTEM_DISK = new SimpleDisk(MASTER, SYSTEM_DISK_SIZE);
+    SYSTEM_DISK = new BlockingDisk(MASTER, SYSTEM_DISK_SIZE);
    
     /* NOTE: The timer chip starts periodically firing as 
              soon as we enable interrupts.

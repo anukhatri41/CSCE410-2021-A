@@ -4,6 +4,7 @@
         "scheduler.C": "cpp",
         "simple_disk.C": "cpp",
         "kernel.C": "cpp",
-        "thread.C": "cpp"
+        "thread.C": "cpp",
+        "kernel-simple-example.C": "cpp"
     }
 }

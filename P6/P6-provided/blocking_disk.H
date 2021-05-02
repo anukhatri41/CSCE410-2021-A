@@ -35,22 +35,16 @@
 
 class BlockingDisk : public SimpleDisk {
    private:
-     /* -- FUNCTIONALITY OF THE IDE LBA28 CONTROLLER */
-
-     DISK_ID      disk_id;            /* This disk is either MASTER or SLAVE */
+      DISK_ID      disk_id;            /* This disk is either MASTER or SLAVE */
 
      unsigned int disk_size;          /* In Byte */
-
      void issue_operation(DISK_OPERATION _op, unsigned long _block_no);
      /* Send a sequence of commands to the controller to initialize the READ/WRITE 
         operation. This operation is called by read() and write(). */ 
    protected:
      /* -- HERE WE CAN DEFINE THE BEHAVIOR OF DERIVED DISKS */ 
 
-     virtual bool is_ready();
-     /* Return true if disk is ready to transfer data from/to disk, false otherwise. */
-
-     virtual void wait_until_ready();
+     void wait_until_ready();
      /* Is called after each read/write operation to check whether the disk is
         ready to start transfering the data from/to the disk. */
    public:
