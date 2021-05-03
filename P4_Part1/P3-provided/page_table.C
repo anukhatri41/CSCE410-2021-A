@@ -1,0 +1,175 @@
+#include "assert.H"
+#include "exceptions.H"
+#include "console.H"
+#include "paging_low.H"
+#include "page_table.H"
+
+#define RIGHT_SHIFT 22
+#define LEFT_SHIFT 10
+#define SHIFT_12 12
+#define SHIFT_2 2
+
+PageTable *PageTable::current_page_table = NULL;
+unsigned int PageTable::paging_enabled = 0;
+ContFramePool *PageTable::kernel_mem_pool = NULL;
+ContFramePool *PageTable::process_mem_pool = NULL;
+unsigned long PageTable::shared_size = 0;
+
+void PageTable::init_paging(ContFramePool *_kernel_mem_pool,
+                            ContFramePool *_process_mem_pool,
+                            const unsigned long _shared_size)
+{
+    // replace the assertion with your P3 implementation for this method
+    kernel_mem_pool = _kernel_mem_pool;
+    process_mem_pool = _process_mem_pool;
+    shared_size = _shared_size;
+    Console::puts("Initialized Paging System\n");
+}
+
+PageTable::PageTable()
+{
+    page_directory = (unsigned long *)(kernel_mem_pool->get_frames(1) * PAGE_SIZE);
+    unsigned long *page_table = (unsigned long *)(process_mem_pool->get_frames(1) * PAGE_SIZE);
+
+    unsigned long address = 0; // holds the physical address of where a page is
+    unsigned int i;
+
+    // map the first 4MB of memory
+    for (i = 0; i < 1024; i++)
+    {
+        page_table[i] = address | 3; // attribute set to: supervisor level, read/write, present(011 in binary)
+        address = address + 4096;    // 4096 = 4kb
+    }
+
+    // fill the first entry of the page directory
+    page_directory[0] = (unsigned long)page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
+    page_directory[0] = page_directory[0] | 3;
+
+    // All indices except the last
+    for (i = 1; i < 1023; i++)
+    {
+        page_directory[i] = 0 | 2; // attribute set to: supervisor level, read/write, not present(010 in binary)
+    }
+
+    // Assigning last index in page_directory back to the page directory
+    page_directory[1023] = (unsigned long) page_directory | 3;
+
+    // Updating current page table
+    current_page_table = this;
+    Console::puts("Constructed Page Table object\n");
+}
+
+void PageTable::load()
+{
+    // write_cr3, read_cr3, write_cr0, and read_cr0 all come from the assembly functions
+    write_cr3((unsigned long)page_directory);
+    Console::puts("Loaded page table\n");
+}
+
+void PageTable::enable_paging()
+{
+    write_cr0(read_cr0() | 0x80000000); // set the paging bit in CR0 to 1
+    paging_enabled = 1;
+    Console::puts("Enabled paging\n");
+}
+
+void PageTable::handle_fault(REGS *_r)
+{
+    // replace the assertion with your implementation for this method,
+    // BUT YOU ALSO NEED TO MAKE A SMALL CHANGE to
+    // the method. Look at the file README-change-needed-handle_fault.txt
+    //
+    // Your implementation can be either:
+    // (a) the one from P3 (i.e., you did not implement the "recursive trick"
+    //     that allows for inner page tables to reside in virtual memory)
+    // or
+    // (b) your new PageTable implementation that supports large address
+    //     spaces (i.e., it allocates inner page tables from
+    //     the process pool)
+    //
+    unsigned long err = _r->err_code;
+
+    // Return because don't handle protection fault here
+    if (err & 1)
+    {
+        Console::puts("Error: Protection Fault\n");
+        return;
+    }
+
+    unsigned long *page_dir = (unsigned long *)read_cr3();
+
+    unsigned long logical_addr = read_cr2();
+
+    // Bit shifted to get correct values
+    unsigned long page_dir_index = logical_addr >> RIGHT_SHIFT;
+    unsigned long page_table_index = (logical_addr >> SHIFT_12) & 0x3FF;
+
+    unsigned long *page_table2;
+    unsigned long* trick_address;
+
+    if (!(page_dir[page_dir_index] & 1))
+    {
+        // Need to get frame for new page table
+        unsigned long page_table_address = process_mem_pool->get_frames(1) * PAGE_SIZE;
+        page_dir[page_dir_index] = page_table_address | 3;
+        page_table2 = (unsigned long *)page_table_address;
+
+        // Same as constructor for setting up page table
+        //unsigned long address = 0; // holds the physical address of where a page is
+        unsigned int i;
+        for (i = 0; i < 1024; i++)
+        {
+            unsigned long address;
+            unsigned long p1_section = 0xFFC00000;
+            unsigned long pd_section = page_dir_index << SHIFT_12;
+            unsigned long i_section = i << SHIFT_2;
+            address = p1_section + pd_section + i_section;
+            trick_address = (unsigned long*)address;
+            *trick_address = 2;
+        }
+        //*trick_address = (process_mem_pool->get_frames(1) * PAGE_SIZE) | 3;
+    }
+    else
+    {   
+        unsigned long address2;
+        unsigned long p1_section = 0xFFC00000;
+        unsigned long pd_section = page_dir_index << SHIFT_12;
+        unsigned long pt_section = page_table_index << SHIFT_2;
+        address2 = p1_section + pd_section + pt_section;
+        trick_address = (unsigned long *) address2;
+
+        page_table2 = (unsigned long *)(page_dir[page_dir_index] & 0xFFFFF000);
+        *trick_address = (process_mem_pool->get_frames(1) * PAGE_SIZE) | 3;
+    }
+
+    
+
+    Console::puts("handled page fault\n");
+}
+
+bool PageTable::check_address(unsigned long address)
+{
+    // you need to implement this for P4 Part II.
+    // It returns true if legitimate, false otherwise.
+    // You check for legitimacy using VMPool::is_legitimate,
+    // which you will implement for real in P4 Part III.
+    // For part II, we give you a fake implementation
+    // in vm_pool.C for you to use for  now.
+    assert(false);
+    return false; // you need to implement this
+}
+
+void PageTable::register_pool(VMPool *_vm_pool)
+{
+    // you need to implement this for P4 Part II.
+    assert(false);
+    Console::puts("registered VM pool\n");
+}
+
+void PageTable::free_page(unsigned long _page_no)
+{
+    // you need to implement this for P4 Part II.
+    assert(false);
+    Console::puts("freed page\n");
+}
+
