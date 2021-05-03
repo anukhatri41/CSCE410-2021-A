@@ -1,0 +1,1 @@
+make clean && make all && ./copykernel.sh && bochs -q -f bochsrc.bxrc > debug_stdout_file
